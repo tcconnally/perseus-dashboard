@@ -1,17 +1,40 @@
 import os
+import logging
+
+logger = logging.getLogger("perseus-dashboard")
+
 from sqlalchemy import create_engine, Column, String, Integer, Float, DateTime, JSON, Text, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import DeclarativeBase, sessionmaker, relationship
 from datetime import datetime, timezone
+
+
+class Base(DeclarativeBase):
+    pass
+
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/perseus_dashboard"
+    ""  # Empty = use mock data
 )
 
-engine = create_engine(DATABASE_URL, pool_size=5, max_overflow=10)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+engine = None
+SessionLocal = None
+
+if DATABASE_URL:
+    try:
+        engine = create_engine(
+            DATABASE_URL,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
+            connect_args={"connect_timeout": 10} if "postgresql" in DATABASE_URL else {},
+        )
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        logger.info("Database engine created successfully")
+    except Exception as e:
+        logger.warning(f"Could not create database engine: {e}")
+        DATABASE_URL = ""
+
 
 # --- Models ---
 
@@ -72,10 +95,16 @@ class TokenAnalytics(Base):
 
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    """Create all tables if they don't exist."""
+    if engine is not None:
+        Base.metadata.create_all(bind=engine)
 
 
 def get_db():
+    """Yield a database session."""
+    if SessionLocal is None:
+        yield None
+        return
     db = SessionLocal()
     try:
         yield db

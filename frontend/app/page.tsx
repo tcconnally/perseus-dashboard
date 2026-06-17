@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ServiceCard from '@/components/ServiceCard';
-import ContextPanel from '@/components/ContextPanel';
-import MemoryFeed from '@/components/MemoryFeed';
-import TokenChart from '@/components/TokenChart';
+import ServiceCard from '../components/ServiceCard';
+import ContextPanel from '../components/ContextPanel';
+import MemoryFeed from '../components/MemoryFeed';
+import TokenChart from '../components/TokenChart';
 
 const API_URL = ''
 
